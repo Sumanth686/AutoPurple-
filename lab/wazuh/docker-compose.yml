@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  wazuh.manager:
+    image: wazuh/wazuh-manager:4.7.3
+    restart: always
+    ports:
+      - "1514:1514"
+      - "55000:55000"
+  wazuh.indexer:
+    image: wazuh/wazuh-indexer:4.7.3
+    restart: always
+    environment:
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_SECURITY_PLUGIN=true"
+      - "plugins.security.disabled=true"
+  wazuh.dashboard:
+    image: wazuh/wazuh-dashboard:4.7.3
+    restart: always
+    environment:
+      - "DISABLE_SECURITY_PLUGIN=true"
+    ports:
+      - "443:5601"
+    depends_on:
+      - wazuh.indexer
+      - wazuh.manager
