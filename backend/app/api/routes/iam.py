@@ -54,4 +54,3 @@ def escalate_finding_to_case(finding_id: int):
     cases_db.append(new_case)
     finding["status"] = "escalated"
     return new_case
-
