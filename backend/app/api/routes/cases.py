@@ -24,6 +24,7 @@ def create_case(case: CaseCreate):
         "related_technique_id": case.related_technique_id,
         "priority": case.priority,
         "status": "open",
+        "source": "manual",
         "created_at": datetime.utcnow().isoformat()
     }
     cases_db.append(new_case)

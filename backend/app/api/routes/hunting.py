@@ -49,6 +49,7 @@ def escalate_hunt_to_case(hunt_id: int):
         "related_technique_id": hunt["technique_id"],
         "priority": "high",
         "status": "open",
+        "source": "threat_hunting",
         "created_at": datetime.utcnow().isoformat()
     }
     cases_db.append(new_case)

@@ -49,6 +49,7 @@ def escalate_finding_to_case(finding_id: int):
         "related_technique_id": "T1078",
         "priority": finding["severity"],
         "status": "open",
+        "source": "iam_audit",
         "created_at": datetime.utcnow().isoformat()
     }
     cases_db.append(new_case)
