@@ -3,3 +3,4 @@ venv/
 node_modules/
 __pycache__/
 lab/wazuh-docker/
+lab/wazuh-docker/single-node/config/wazuh_indexer_ssl_certs/
