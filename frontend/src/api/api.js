@@ -17,4 +17,4 @@ export const escalateIamFinding = (id) => client.post(`/api/iam/${id}/escalate`)
 
 export const getCases = () => client.get("/api/cases/");
 export const createCase = (data) => client.post("/api/cases/", data);
-export const closeCase = (id) => client.post(`/api/cases/${id}/close`);
+export const closeCase = (id) => client.patch(`/api/cases/${id}/close`);
