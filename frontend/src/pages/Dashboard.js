@@ -59,6 +59,20 @@ export default function Dashboard() {
   const [status, setStatus] = useState("Loading...");
   const [filter, setFilter] = useState("all");
   const [creating, setCreating] = useState(false);
+  const [outcomeStats, setOutcomeStats] = useState({
+    true_positive: 0,
+    false_negative: 0,
+    false_positive: 0,
+    true_negative: 0,
+  });
+
+  useEffect(() => {
+    const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
+    fetch(API + "/api/runs/stats/summary")
+      .then((res) => res.json())
+      .then((data) => setOutcomeStats(data))
+      .catch(() => {});
+  }, [runs]);
 
   const load = () => {
     getRuns()
@@ -76,11 +90,17 @@ export default function Dashboard() {
   }, []);
 
   const newRun = () => {
+    const name = prompt("Enter simulation name:", "Linux Bash Detection Test");
+    if (!name) return;
+
+    const technique_id = prompt("Enter ATT&CK technique ID:", "T1059.004");
+    if (!technique_id) return;
+
     setCreating(true);
 
     createRun({
-      name: "Linux Bash Detection Test",
-      technique_id: "T1059.004",
+      name: name,
+      technique_id: technique_id,
     })
       .then(load)
       .finally(() => {
@@ -210,6 +230,36 @@ export default function Dashboard() {
             value={metrics.detected}
             detail="Completed runs with a match"
             color="red"
+          />
+        </section>
+
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            label="True positives"
+            value={outcomeStats.true_positive}
+            detail="Correctly detected attacks"
+            color="green"
+          />
+
+          <MetricCard
+            label="False negatives"
+            value={outcomeStats.false_negative}
+            detail="Attacks that were missed"
+            color="red"
+          />
+
+          <MetricCard
+            label="False positives"
+            value={outcomeStats.false_positive}
+            detail="Alerts with no matching attack"
+            color="amber"
+          />
+
+          <MetricCard
+            label="True negatives"
+            value={outcomeStats.true_negative}
+            detail="Quiet periods correctly clear"
+            color="cyan"
           />
         </section>
 

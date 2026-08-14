@@ -6,3 +6,8 @@ lab/wazuh-docker/single-node/config/wazuh_indexer_ssl_certs/
 *.deb
 *.swo
 *.swp
+
+# Local backups and accidental path copies
+*.bak
+backend.backup/
+frontend.backup/
