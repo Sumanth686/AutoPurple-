@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+import json
 import subprocess
 import time
 
@@ -11,22 +12,41 @@ runs_db = []
 LINUX_TEST_NUMBERS = {
     "T1059.004": 1,
     "T1082": 3,
+    "T1105": 27,
 }
 
 class RunCreate(BaseModel):
     name: str
     technique_id: str
 
-def check_wazuh_detection(technique_id: str) -> bool:
-    try:
-        result = subprocess.run(
-            ["sudo", "docker", "exec", "-u", "0", "single-node-wazuh.manager-1",
-             "sh", "-c", f"tail -n 200 /var/ossec/logs/alerts/alerts.json | grep -i '{technique_id}'"],
-            capture_output=True, text=True, timeout=15
-        )
-        return bool(result.stdout.strip())
-    except Exception:
-        return False
+def check_wazuh_detection(technique_id: str, since: datetime, attempts: int = 6, delay: int = 5) -> bool:
+    """True only if a Wazuh alert tagged with this MITRE technique fired after `since`."""
+    for _ in range(attempts):
+        try:
+            result = subprocess.run(
+                ["sudo", "docker", "exec", "-u", "0", "single-node-wazuh.manager-1",
+                 "tail", "-n", "5000", "/var/ossec/logs/alerts/alerts.json"],
+                capture_output=True, text=True, timeout=15
+            )
+            for line in result.stdout.splitlines():
+                if "alerts.json" in line:
+                    continue  # ignore alerts caused by this check (or manual checks) reading the alert log
+                try:
+                    alert = json.loads(line)
+                except ValueError:
+                    continue
+                mitre_ids = alert.get("rule", {}).get("mitre", {}).get("id", [])
+                if isinstance(mitre_ids, str):
+                    mitre_ids = [mitre_ids]
+                if technique_id not in mitre_ids:
+                    continue
+                fired_at = datetime.strptime(alert["timestamp"], "%Y-%m-%dT%H:%M:%S.%f%z")
+                if fired_at >= since:
+                    return True
+        except Exception:
+            pass
+        time.sleep(delay)
+    return False
 
 def execute_atomic_test(run_id: int, technique_id: str):
     test_number = LINUX_TEST_NUMBERS.get(technique_id, 1)
@@ -36,6 +56,7 @@ def execute_atomic_test(run_id: int, technique_id: str):
         f'Invoke-AtomicTest {technique_id} -TestNumbers {test_number} -Confirm:$false'
     )
     run = next((r for r in runs_db if r['id'] == run_id), None)
+    started = datetime.now(timezone.utc) - timedelta(seconds=2)
     try:
         result = subprocess.run(
             ["pwsh", "-NonInteractive", "-Command", command],
@@ -43,8 +64,7 @@ def execute_atomic_test(run_id: int, technique_id: str):
         )
         if run:
             if result.returncode == 0:
-                time.sleep(8)
-                detected = check_wazuh_detection(technique_id)
+                detected = check_wazuh_detection(technique_id, started)
                 run['status'] = 'completed'
                 run['detected'] = detected
                 run['coverage_score'] = 1.0 if detected else 0.0
