@@ -87,6 +87,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     load();
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const newRun = () => {
