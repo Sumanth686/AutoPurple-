@@ -6,7 +6,8 @@ app = FastAPI(title="AutoPurple API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://silver-eureka-695jjrjrgvw9c475q-3000.app.github.dev", "http://localhost:3000"],
+    allow_origins=["http://localhost:3000"],
+    allow_origin_regex=r"https://.*-3000\.app\.github\.dev",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
