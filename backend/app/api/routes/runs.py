@@ -7,6 +7,12 @@ import time
 router = APIRouter(prefix='/api/runs', tags=['Simulation Runs'])
 runs_db = []
 
+# Atomic Red Team test number to run for each technique (must be a Linux-compatible test)
+LINUX_TEST_NUMBERS = {
+    "T1059.004": 1,
+    "T1082": 3,
+}
+
 class RunCreate(BaseModel):
     name: str
     technique_id: str
@@ -23,10 +29,11 @@ def check_wazuh_detection(technique_id: str) -> bool:
         return False
 
 def execute_atomic_test(run_id: int, technique_id: str):
+    test_number = LINUX_TEST_NUMBERS.get(technique_id, 1)
     command = (
         f'$ErrorActionPreference = "Stop"; '
         f'Import-Module "~/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1" -Force; '
-        f'Invoke-AtomicTest {technique_id} -TestNumbers 1 -Confirm:$false'
+        f'Invoke-AtomicTest {technique_id} -TestNumbers {test_number} -Confirm:$false'
     )
     run = next((r for r in runs_db if r['id'] == run_id), None)
     try:
